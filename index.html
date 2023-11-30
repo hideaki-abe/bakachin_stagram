@@ -27,9 +27,8 @@
         <button id="signup-button">登録</button>
     </div>
 
-    <!-- コンテンツ表示画面（ログイン後表示） -->
+    <!-- コンテンツ画面（ログイン後表示） -->
     <div id="content-container" style="display: none;">
-        <!-- コンテンツ表示画面 -->
         <h1>バカチン<span>★</span>スタグラム</h1>
         <div>
             <div id="name">
@@ -44,158 +43,160 @@
             <!-- ログアウトボタン -->
             <br><button id="logout-button" style="display: none;">ログアウト</button>
         </div>
+    </div>
 
 
-        <!-- JQuery -->
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- JQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
-        <!-- Firebase -->
-        <script type="module">
-            // Firebase SDKのインポート
-            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-            import { getDatabase, ref, push, set, onChildAdded }
-                from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
-            import { getStorage, ref as sRef, uploadBytes, getDownloadURL }
-                from "https://www.gstatic.com/firebasejs/10.6.0/firebase-storage.js";
+    <!-- Firebase -->
+    <script type="module">
+        // Firebase SDKのインポート
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
+        import { getDatabase, ref, push, set, onChildAdded }
+            from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
+        import { getStorage, ref as sRef, uploadBytes, getDownloadURL }
+            from "https://www.gstatic.com/firebasejs/10.6.0/firebase-storage.js";
 
-            // Firebaseの設定
-            const firebaseConfig = {
-                apiKey: "",
-                authDomain: "",
-                projectId: "",
-                storageBucket: "",
-                messagingSenderId: "",
-                appId: ""
+        // Firebaseの設定
+        const firebaseConfig = {
+            apiKey: "",
+            authDomain: "",
+            projectId: "",
+            storageBucket: "",
+            messagingSenderId: "",
+            appId: ""
+        };
+        const app = initializeApp(firebaseConfig); // Firebase初期化
+        const db = getDatabase(app); //RealtimeDBに接続
+        const storage = getStorage(app); // Storageに接続
+        const dbRef = ref(db, "chat"); //RealtimeDB内の"chat"を使う
+
+        //投稿ボタンクリック時のイベント
+        $("#send").on("click", async function () {
+            let imageUrl = null;
+            const image = $("#image").prop('files')[0];
+
+            // 画像をFirebase Storageにアップロード
+            if (image) {
+                const imageRef = sRef(storage, `images/${image.name}`);
+                const snapshot = await uploadBytes(imageRef, image);
+                imageUrl = await getDownloadURL(snapshot.ref);
+            }
+
+            const msg = {
+                uname: $("#uname").val(),
+                text: $("#text").val(),
+                image: imageUrl  // 画像URLを保存
             };
-            const app = initializeApp(firebaseConfig); // Firebase初期化
-            const db = getDatabase(app); //RealtimeDBに接続
-            const storage = getStorage(app); // Storageに接続
-            const dbRef = ref(db, "chat"); //RealtimeDB内の"chat"を使う
+            const newPostRef = push(dbRef); //ユニークKEYを生成
+            set(newPostRef, msg); //"chat"にユニークKEYをつけてオブジェクトデータを登録
+        });
 
-            //投稿ボタンクリック時のイベント
-            $("#send").on("click", async function () {
-                let imageUrl = null;
-                const image = $("#image").prop('files')[0];
-
-                // 画像をFirebase Storageにアップロード
-                if (image) {
-                    const imageRef = sRef(storage, `images/${image.name}`);
-                    const snapshot = await uploadBytes(imageRef, image);
-                    imageUrl = await getDownloadURL(snapshot.ref);
-                }
-
-                const msg = {
-                    uname: $("#uname").val(),
-                    text: $("#text").val(),
-                    image: imageUrl  // 画像URLを保存
-                };
-                const newPostRef = push(dbRef); //ユニークKEYを生成
-                set(newPostRef, msg); //"chat"にユニークKEYをつけてオブジェクトデータを登録
-            });
-
-            //最初にデータ取得＆onSnapshotでリアルタイムにデータを取得
-            onChildAdded(dbRef, function (data) {
-                const msg = data.val(); //最初にデータ取得＆onSnapshotでリアルタイムにデータを取得
-                //const key = data.key;      //データのユニークキー（削除や更新に使用可能）
-                //表示用テキスト・HTMLを作成
-                let h = '<p>';
-                h += msg.uname + '<br>';
-                if (msg.image) {
-                    h += `<img src="${msg.image}" style="max-width:350px;"><br>`; // 画像表示
-                }
-                h += msg.text + '<br><br><br>';
-                h += '</p>';
-                $("#output").prepend(h); //#outputの最初に追加
-            });
-
-            //Authentication関連のコード
-            // Firebase Authenticationのインポート
-            import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
-
-            const auth = getAuth();
-
-            // ログイン機能
-            function loginUser(email, password) {
-                signInWithEmailAndPassword(auth, email, password)
-                    .then((userCredential) => {
-                        // ログイン成功
-                        console.log("Logged in as: ", userCredential.user);
-                    })
-                    .catch((error) => {
-                        console.error("Login failed: ", error);
-                    });
+        //最初にデータ取得＆onSnapshotでリアルタイムにデータを取得
+        onChildAdded(dbRef, function (data) {
+            const msg = data.val(); //最初にデータ取得＆onSnapshotでリアルタイムにデータを取得
+            //const key = data.key;      //データのユニークキー（削除や更新に使用可能）
+            //表示用テキスト・HTMLを作成
+            let h = '<p>';
+            h += msg.uname + '<br>';
+            if (msg.image) {
+                h += `<img src="${msg.image}" style="max-width:350px;"><br>`; // 画像表示
             }
+            h += msg.text + '<br><br><br>';
+            h += '</p>';
+            $("#output").prepend(h); //#outputの最初に追加
+        });
 
-            // 新規アカウント作成機能
-            function signUpUser(email, password) {
-                createUserWithEmailAndPassword(auth, email, password)
-                    .then((userCredential) => {
-                        // アカウント作成成功
-                        console.log("Account created for: ", userCredential.user);
-                    })
-                    .catch((error) => {
-                        console.error("Error in account creation: ", error);
-                    });
+        //Authentication関連のコード
+        // Firebase Authenticationのインポート
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
+
+        const auth = getAuth();
+
+        // ログイン関数
+        function loginUser(email, password) {
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // ログイン成功
+                    console.log("Logged in as: ", userCredential.user);
+                })
+                .catch((error) => {
+                    console.error("Login failed: ", error);
+                });
+        }
+
+        // 新規登録関数
+        function signUpUser(email, password) {
+            createUserWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // 新規登録成功
+                    console.log("Account created for: ", userCredential.user);
+                })
+                .catch((error) => {
+                    //新規登録失敗
+                    console.error("Error in account creation: ", error);
+                });
+        }
+
+        // ログイン状況を確認
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // ログインしている状態
+                console.log("User is logged in: ", user);
+            } else {
+                // ログアウトしている状態
+                console.log("User is logged out");
             }
+        });
 
-            // ユーザーの認証状態を監視
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    // ユーザーがログインしている状態
-                    console.log("User is logged in: ", user);
-                } else {
-                    // ユーザーがログアウトしている状態
-                    console.log("User is logged out");
-                }
-            });
+        // ログアウト関数
+        function logoutUser() {
+            signOut(auth)
+                .then(() => {
+                    console.log("User logged out");
+                })
+                .catch((error) => {
+                    console.error("Error in logging out: ", error);
+                });
+        }
 
-            // ログアウト機能
-            function logoutUser() {
-                signOut(auth)
-                    .then(() => {
-                        console.log("User logged out");
-                    })
-                    .catch((error) => {
-                        console.error("Error in logging out: ", error);
-                    });
+        // ログイン状況に応じた表示
+        onAuthStateChanged(auth, (user) => {
+            //ユーザーがログインしている場合
+            if (user) {
+                $('#login-container').hide();
+                $('#content-container').show();
+                $('#logout-button').show();
+            //ユーザーがログアウトしている場合
+            } else {
+                $('#login-container').show();
+                $('#content-container').hide();
+                $('#logout-button').hide();
             }
+        });
 
-            // 認証状態の監視
-            onAuthStateChanged(auth, (user) => {
-                //ユーザーがログインしている場合
-                if (user) {
-                    $('#login-container').hide();
-                    $('#content-container').show();
-                    $('#logout-button').show();
-                    //ユーザーがログアウトしている場合
-                } else {
-                    $('#login-container').show();
-                    $('#content-container').hide();
-                    $('#logout-button').hide();
-                }
-            });
+        // ログインボタンのイベント
+        $('#login-button').on('click', function () {
+            const email = $('#login-email').val();
+            const password = $('#login-password').val();
+            loginUser(email, password);
+        });
 
-            // ログインボタンのイベント
-            $('#login-button').on('click', function () {
-                const email = $('#login-email').val();
-                const password = $('#login-password').val();
-                loginUser(email, password);
-            });
+        // サインアップボタンのイベント
+        $('#signup-button').on('click', function () {
+            const email = $('#signup-email').val();
+            const password = $('#signup-password').val();
+            signUpUser(email, password);
+        });
 
-            // サインアップボタンのイベント
-            $('#signup-button').on('click', function () {
-                const email = $('#signup-email').val();
-                const password = $('#signup-password').val();
-                signUpUser(email, password);
-            });
-
-            // ログアウトボタンのイベント
-            $('#logout-button').on('click', function () {
-                logoutUser();
-            });
+        // ログアウトボタンのイベント
+        $('#logout-button').on('click', function () {
+            logoutUser();
+        });
 
 
-        </script>
+    </script>
 </body>
 
 </html>
