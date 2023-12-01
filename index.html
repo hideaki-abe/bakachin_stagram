@@ -72,7 +72,7 @@
         const storage = getStorage(app); // Storageに接続
         const dbRef = ref(db, "chat"); //RealtimeDB内の"chat"を使う
 
-        //投稿ボタンクリック時のイベント
+        //投稿ボタンのイベント
         $("#send").on("click", async function () {
             let imageUrl = null;
             const image = $("#image").prop('files')[0];
@@ -96,7 +96,6 @@
         //最初にデータ取得＆onSnapshotでリアルタイムにデータを取得
         onChildAdded(dbRef, function (data) {
             const msg = data.val(); //最初にデータ取得＆onSnapshotでリアルタイムにデータを取得
-            //const key = data.key;      //データのユニークキー（削除や更新に使用可能）
             //表示用テキスト・HTMLを作成
             let h = '<p>';
             h += msg.uname + '<br>';
@@ -108,9 +107,15 @@
             $("#output").prepend(h); //#outputの最初に追加
         });
 
-        //Authentication関連のコード
+        //Authentication関連コード
         // Firebase Authenticationのインポート
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
+        import {
+            getAuth,
+            signInWithEmailAndPassword,
+            createUserWithEmailAndPassword,
+            onAuthStateChanged,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
 
         const auth = getAuth();
 
@@ -120,8 +125,9 @@
                 .then((userCredential) => {
                     // ログイン成功
                     console.log("Logged in as: ", userCredential.user);
-                })
+                }) 
                 .catch((error) => {
+                     //ログイン失敗
                     console.error("Login failed: ", error);
                 });
         }
@@ -139,13 +145,13 @@
                 });
         }
 
-        // ログイン状況を確認
+        // ログイン状況確認
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // ログインしている状態
+                // ログイン状態
                 console.log("User is logged in: ", user);
             } else {
-                // ログアウトしている状態
+                // ログアウト状態
                 console.log("User is logged out");
             }
         });
@@ -163,12 +169,12 @@
 
         // ログイン状況に応じた表示
         onAuthStateChanged(auth, (user) => {
-            //ユーザーがログインしている場合
+            //ログインしている場合
             if (user) {
                 $('#login-container').hide();
                 $('#content-container').show();
                 $('#logout-button').show();
-            //ユーザーがログアウトしている場合
+            //ログアウトしている場合
             } else {
                 $('#login-container').show();
                 $('#content-container').hide();
@@ -183,7 +189,7 @@
             loginUser(email, password);
         });
 
-        // サインアップボタンのイベント
+        // 新規登録ボタンのイベント
         $('#signup-button').on('click', function () {
             const email = $('#signup-email').val();
             const password = $('#signup-password').val();

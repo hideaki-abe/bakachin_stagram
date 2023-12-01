@@ -20,6 +20,10 @@ h1 span {
 	color: red;
 }
 
+h2 {
+	margin-top: 20px;
+}
+
 #name {
 	color: #000000;
 	font-family: "Nico Moji";
