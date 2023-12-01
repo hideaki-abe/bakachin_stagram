@@ -1,7 +1,7 @@
 # バカチンスタグラム
 
 ## 今回頑張ったこと・できたこと・機能
-- 画像＆テキスト投稿ののリアルタイム表示機能（Realtime Database＆Firestore使用）
+- 画像＆テキスト投稿ののリアルタイム表示機能（Realtime Database＆Storage使用）
 - ログイン機能（Authentication使用）
 
 ## 難しかったこと・実装したかったけどできなかったこと
